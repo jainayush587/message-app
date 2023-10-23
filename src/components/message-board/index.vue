@@ -38,6 +38,7 @@
             <div class="empty-section" v-else>
                 <span>No Messages, please write something...</span>
             </div>
+
         </div>
         <confirmation-dialog
             v-if="showDialog"
@@ -50,7 +51,7 @@
 
 </template>
 <script>
-import moment from 'moment';
+//import moment from 'moment';
 import axios from "axios";
 import ConfirmationDialog from './comfirmation-dialog.vue';
 export default {
@@ -81,27 +82,30 @@ export default {
         //TO DO make single function
         handleConfirm() {
             this.showDialog = false;
-            this.messages = [];
+            this.messages.forEach(item => {
+                this.deleteThis(item.id);
+            });
+            this.getMessages();
+            //this.messages = [];
         },
         handleCancel() {
             this.showDialog = false;
         },
         getMessages(){
             const messages =  axios.get('https://mapi.harmoney.dev/api/v1/messages/', {
-                header:{
-                    "Authorization": "Bearer",
+                headers:{
+                    "Authorization": "JGkKkhdnzDwR8nb7",
                 }
             });
             messages
             .then((res) => {
-                console.log(res);
+                if(res?.data){
+                    this.messages = res.data;
+                }
             })
             .catch((err) => {
                 console.error(err);
             })
-            /* .finally(()=>{
-
-            }) */
         },
         postMessage() {
             const postIt = axios.post(
@@ -111,18 +115,19 @@ export default {
                 },
                 {
                     headers: {
-                        "Authorization": "Bearer",
+                        "Authorization": "JGkKkhdnzDwR8nb7",
                     },
                 }
             );
             postIt
-            .then((res) => {
-                console.log(res);
+            .then(() => {
+                window.alert('Message has been uploaded successfully');
+                this.getMessages();
             })
             .catch((err)=>{
                 console.log(err);
             })
-            .finally(()=>{
+            /* .finally(()=>{
                 console.log(Date.now());
 
                 let dateTime = moment(Date.now()).format('LLL'); //moment.unix(Date.now())
@@ -138,32 +143,35 @@ export default {
                 }
                 console.log(this.messages);
                 //this.sortArrayAsend();
-            })
+            }) */
         },
         sortArrayAsend(){
-            this.messages.sort((a, b) => a.unixStamp - b.unixStamp);
+            this.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         },
         sortArrayDsec(){
-            this.messages.sort((a, b) => b.unixStamp - a.unixStamp);
-        },
-        deleteAll(){
-            this.messages = [];
+            this.messages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         },
         deleteThis(id){
-            const deleteIt = axios.del(`https://mapi.harmoney.dev/api/v1/messages/${id}/`);
+            const deleteIt = axios.delete(`https://mapi.harmoney.dev/api/v1/messages/${id}/`,
+            {
+                headers: {
+                    "Authorization": "JGkKkhdnzDwR8nb7",
+                },
+            });
             deleteIt
             .then(() => {
-                console.log('Deleted Successfully');
+                window.alert('Deleted Successfully');
+                this.getMessages();
             })
             .catch((err)=>{
                 console.error('Failed to Delete the message', err);
             })
-            .finally(()=>{
+            /* .finally(()=>{
                 const indexToRemove = this.messages.findIndex(obj => obj.id === id);
                 if (indexToRemove !== -1) {
                     this.messages.splice(indexToRemove, 1);
                 }
-            });
+            }); */
         }
     }
 }
@@ -202,6 +210,7 @@ export default {
                     border-radius: 5px;
                     font-weight: 600;
                     padding: 0 15px;
+                    cursor: pointer;
                 }
                 .delete-all{
                     border: none;
@@ -210,6 +219,7 @@ export default {
                     font-weight: 600;
                     background: #e91a0e;
                     padding: 0 15px;
+                    cursor: pointer;
                 }
                 span{
                     padding-top: 6px;
